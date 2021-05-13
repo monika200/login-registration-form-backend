@@ -104,3 +104,59 @@ function authenticatedUsers (req, res, next) {
     )
   }
 }
+
+app.post('/forgot', async (req, res) => {
+	try {
+		const client = await mongoClient.connect(DB_URL);
+		const db = client.db(DATA_BASE);
+		let user = await db.collection(USERS_COLLECTION).findOne({ email: req.body.email });
+		if (user) {
+			const mailOptions = {
+				from: process.env.EMAIL,
+				to: req.body.email,
+				subject: 'Request to Reset Password!!',
+				html: `
+               <p>THere is the link to reset your password</p>
+               <p>${process.env.FRONTEND_URL}/reset</p>
+               `,
+			};
+			transporter.sendMail(mailOptions, (err, data) => {
+				if (err) {
+					console.log(err);
+				} else {
+					console.log('Email Sent');
+				}
+			});
+			res
+				.status(200)
+				.json({ message: 'Reset mail sent to specified email, please check your email' });
+		} else {
+			res.status(400).json({ message: "Email Doestn't exist, Try Again with valid Email" });
+		}
+	} catch (error) {
+		console.log(error);
+		res.status(400).json({ message: 'something went wrong' });
+	}
+});
+
+app.put('/reset', async (req, res) => {
+	try {
+		const client = await mongoClient.connect(DB_URL);
+		const db = client.db(DATA_BASE);
+		const user = await db.collection(USERS_COLLECTION).findOne({ email: req.body.email });
+		if (user) {
+			const salt = await bcrypt.genSalt(10);
+			const hash = await bcrypt.hash(req.body.password, salt);
+			req.body.password = hash;
+			await db
+				.collection(USERS_COLLECTION)
+				.updateOne({ email: req.body.email }, { $set: { password: req.body.password } });
+			res.status(200).json({ message: 'Password reseted successfully' });
+		} else {
+			res.status(400).json({ message: "User Doesn't exists, Try again with valid email" });
+		}
+	} catch (error) {
+		console.log(error);
+		res.status(400).json({ message: 'something went wrong' });
+	}
+});
