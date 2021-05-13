@@ -24,7 +24,7 @@ const port = process.env.PORT || 5000
 app.listen(port, () => console.log('your app is running wonderfully at', port))
 
 app.get('/', (req, res) => {
-  res.send('<h1>WELCOME TO E-LEARNING PORTAL! </h1>')
+  res.send('<h1>WELCOME TO BACKEND! </h1>')
 })
 
 app.post('/register',   async (req, res) => {
