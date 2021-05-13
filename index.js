@@ -3,7 +3,16 @@ const cors = require('cors')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const dotenv = require('dotenv')
+const nodemailer = require('nodemailer');
 dotenv.config()
+
+const transporter = nodemailer.createTransport({
+	service: 'gmail',
+	auth: {
+		user: process.env.EMAIL,
+		pass: process.env.PASSWORD,
+	},
+});
 
 // simply mongodb installed
 const mongodb = require('mongodb')
@@ -107,16 +116,16 @@ function authenticatedUsers (req, res, next) {
 
 app.post('/forgot', async (req, res) => {
 	try {
-		const client = await mongoClient.connect(DB_URL);
-		const db = client.db(DATA_BASE);
-		let user = await db.collection(USERS_COLLECTION).findOne({ email: req.body.email });
+		const client = await mongoClient.connect(dbURL);
+		const db = client.db('Records');
+		let user = await db.collection('users').findOne({ email: req.body.email });
 		if (user) {
 			const mailOptions = {
 				from: process.env.EMAIL,
 				to: req.body.email,
 				subject: 'Request to Reset Password!!',
 				html: `
-               <p>THere is the link to reset your password</p>
+               <p>Below is the link to reset your password</p>
                <p>${process.env.FRONTEND_URL}/reset</p>
                `,
 			};
@@ -141,15 +150,15 @@ app.post('/forgot', async (req, res) => {
 
 app.put('/reset', async (req, res) => {
 	try {
-		const client = await mongoClient.connect(DB_URL);
-		const db = client.db(DATA_BASE);
-		const user = await db.collection(USERS_COLLECTION).findOne({ email: req.body.email });
+		const client = await mongoClient.connect(dbURL);
+		const db = client.db('Records');
+		const user = await db.collection('users').findOne({ email: req.body.email });
 		if (user) {
 			const salt = await bcrypt.genSalt(10);
 			const hash = await bcrypt.hash(req.body.password, salt);
 			req.body.password = hash;
 			await db
-				.collection(USERS_COLLECTION)
+				.collection('users')
 				.updateOne({ email: req.body.email }, { $set: { password: req.body.password } });
 			res.status(200).json({ message: 'Password reseted successfully' });
 		} else {
