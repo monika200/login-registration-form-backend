@@ -13,9 +13,6 @@ const dbURL = process.env.dbURL
 const app = express()
 app.use(express.json())
 app.use(cors())
-app.use(cors({
-    origin:"https://eazr-login-registration-form.netlify.app/"
-}))
 
 const port = process.env.PORT || 5000
 app.listen(port, () => console.log('your app is running wonderfully at', port))
